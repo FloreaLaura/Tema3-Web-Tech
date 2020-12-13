@@ -6,8 +6,8 @@ const mysql = require('mysql2/promise')
 
 // TODO: change the credentials to fit your own
 // if user does not have the right to create, run (as root): GRANT ALL PRIVILEGES ON *.* TO 'app'@'localhost';
-const DB_USERNAME = 'app1'
-const DB_PASSWORD = 'welcome123'
+const DB_USERNAME = 'root'
+const DB_PASSWORD = 'pass'
 
 let conn
 
@@ -47,7 +47,7 @@ let FoodItem = sequelize.define('foodItem', {
 
 
 const app = express()
-// TODO
+app.use(bodyParser.json())
 
 app.get('/create', async (req, res) => {
     try{
@@ -81,11 +81,36 @@ app.get('/food-items', async (req, res) => {
 
 app.post('/food-items', async (req, res) => {
     try{
-        // TODO
-    }
-    catch(err){
-        // TODO
-    }
+
+        let foodBody = req.body;
+
+        if(!foodBody.name && !foodBody.category && !foodBody.calories){
+            return res.status(400).json({ message: 'body is missing' }) 
+        }
+        
+        if(!foodBody.name || !foodBody.category || !foodBody.calories){
+           return res.status(400).json({message:'malformed request'})
+        }
+
+		 if(foodBody.calories<0){
+           return res.status(400).json({message:'calories should be a positive number'})
+        }
+
+        if(foodBody.category.length<3 ||foodBody.category.length>10)
+        {
+           return res.status(400).json({message:'not a valid category'})
+        }
+
+        foodItemDb = new FoodItem(foodBody)
+        await foodItemDb.save()
+        return res.status(201).json({"message":"created"})
+
+    } catch (err) {
+        console.warn(err.stack)
+        res.status(500).json({"message": "internal server error"})
+    }  
+
+    
 })
 
 module.exports = app
